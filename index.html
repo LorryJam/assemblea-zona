@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Assemblea Zona</title>
+<meta name="description" content="Accoglienza assemblea – AGESCI Zona Prealpi Vicentine">
+<meta name="theme-color" content="#462678">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Assemblea">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  html, body { margin: 0; height: 100%; background: #462678; overflow: hidden; }
+  body { font: 16px/1.4 Roboto, Tahoma, "Segoe UI", system-ui, sans-serif; color: #fff; }
+  /* La pagina operatori occupa tutto lo schermo */
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #ECE9E6; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s; z-index: 1; }
+  #app.ready { opacity: 1; visibility: visible; pointer-events: auto; }
+  /* Schermata d'avvio con l'emblema, finché la pagina non è pronta */
+  #splash { position: fixed; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom); text-align: center; transition: opacity .25s; }
+  #splash.hide { opacity: 0; pointer-events: none; }
+  #splash img { width: 120px; height: auto; }
+  .zona { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; opacity: .9; }
+  .msg { font-size: 15px; opacity: .85; min-height: 1.4em; }
+  .spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.3); border-top-color: #FDC500; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #retry { display: none; background: #FDC500; color: #211638; border: 0; border-radius: 10px; padding: 12px 22px; font: inherit; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="splash" role="status" aria-live="polite">
+  <img src="emblema-bianco.svg" alt="Emblema AGESCI">
+  <div class="zona">Zona Prealpi Vicentine</div>
+  <div class="spinner" id="spinner"></div>
+  <div class="msg" id="msg">Apertura in corso…</div>
+  <button id="retry" type="button">Riprova</button>
+</div>
+<iframe id="app" title="Accoglienza Assemblea" allow="clipboard-write"></iframe>
+
+<script>
+(function () {
+  'use strict';
+  // Indirizzo della pagina operatori (Google Apps Script). Se un giorno cambia, si modifica solo questa riga.
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbwWQwtvm23Q5aCEkexHhj-kc-5Suixgvl2JjTLYpJyKynOeVCdlWM44haa-ALiVgZ4/exec';
+
+  var frame = document.getElementById('app');
+  var splash = document.getElementById('splash');
+  var msg = document.getElementById('msg');
+  var retry = document.getElementById('retry');
+  var spinner = document.getElementById('spinner');
+  var timer = null;
+
+  function show() {
+    clearTimeout(timer);
+    frame.classList.add('ready');
+    splash.classList.add('hide');
+  }
+
+  function fail(text) {
+    clearTimeout(timer);
+    spinner.style.display = 'none';
+    msg.textContent = text;
+    retry.style.display = 'inline-block';
+    splash.classList.remove('hide');
+    frame.classList.remove('ready');
+  }
+
+  function open() {
+    retry.style.display = 'none';
+    spinner.style.display = 'block';
+    msg.textContent = 'Apertura in corso…';
+    if (!navigator.onLine) { fail('Nessuna connessione a internet. Collegati al Wi-Fi o attiva i dati e premi Riprova.'); return; }
+    clearTimeout(timer);
+    timer = setTimeout(function () { fail('La pagina ci mette troppo ad aprirsi. Controlla la connessione e premi Riprova.'); }, 25000);
+    frame.src = APP_URL + (APP_URL.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+  }
+
+  frame.addEventListener('load', function () { if (frame.src) show(); });
+  retry.addEventListener('click', open);
+  window.addEventListener('online', function () { if (retry.style.display !== 'none') open(); });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* senza service worker funziona lo stesso */ });
+  }
+  open();
+})();
+</script>
+</body>
+</html>
