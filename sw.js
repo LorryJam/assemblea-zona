@@ -1,6 +1,7 @@
 // Service worker della mini-app: tiene in memoria solo il "guscio" (icone, emblema, pagina d'avvio)
 // così l'app si apre subito. I dati dell'assemblea arrivano sempre da Google, mai dalla cache.
-var CACHE = 'assemblea-v1';
+var CACHE = 'assemblea-v2';
+var NETWORK_TIMEOUT_MS = 4000;   // rete lenta o "finta" (Wi-Fi senza internet): dopo 4 s uso la copia salvata
 var SHELL = ['./', 'index.html', 'manifest.webmanifest', 'emblema-bianco.svg',
   'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-32.png'];
 
@@ -17,10 +18,24 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var url = new URL(e.request.url);
   if (url.origin !== self.location.origin || e.request.method !== 'GET') return; // Google: sempre dalla rete
-  // Prima la rete (così gli aggiornamenti arrivano subito), la cache solo se manca la connessione
-  e.respondWith(fetch(e.request).then(function (r) {
-    var copy = r.clone();
-    caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
-    return r;
-  }).catch(function () { return caches.match(e.request); }));
+  // Prima la rete (così gli aggiornamenti arrivano subito). Se la rete non risponde entro 4 s
+  // o non c'è, uso la copia salvata; se la copia non c'è, aspetto comunque la rete.
+  e.respondWith(new Promise(function (resolve) {
+    var done = false;
+    function finish(r) { if (!done && r) { done = true; resolve(r); } }
+    var timer = setTimeout(function () { caches.match(e.request).then(finish); }, NETWORK_TIMEOUT_MS);
+    fetch(e.request).then(function (r) {
+      clearTimeout(timer);
+      if (r && r.ok) {
+        var copy = r.clone();
+        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+      }
+      if (!done) { done = true; resolve(r); }
+    }).catch(function () {
+      clearTimeout(timer);
+      caches.match(e.request).then(function (c) {
+        if (!done) { done = true; resolve(c || Response.error()); }
+      });
+    });
+  }));
 });
