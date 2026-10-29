@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mappa delle associazioni – Assemblea di Zona (esempio)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root {
+    --viola-scuro: #211638; --viola: #462678; --viola-medio: #6B478D; --viola-chiaro: #AEB0D9;
+    --viola-tenue: #F1EEF7; --giallo: #FDC500; --sfondo: #F6F4F1; --testo: #211638; --testo-2: #4A4458;
+    --bordo: #DAD5E3; --raggio: 6px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: 'Roboto', Tahoma, Arial, sans-serif; background: var(--sfondo); color: var(--testo); display: flex; flex-direction: column; }
+  h1, h2, h3 { font-family: 'Roboto Slab', Georgia, serif; margin: 0; }
+
+  .testata { background-color: var(--viola);
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 7px);
+    color: #fff; flex: none; }
+  .testata .riga { display: flex; align-items: center; gap: 16px; padding: 16px 20px; }
+  .testata img { width: 48px; height: auto; flex: none; }
+  .zona { font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--giallo); font-weight: 500; }
+  .testata h1 { font-size: clamp(20px, 3vw, 28px); line-height: 1.2; margin-top: 2px; }
+  .striscia { display: flex; height: 6px; }
+  .striscia span:first-child { flex: 65; background: var(--viola-scuro); }
+  .striscia span:last-child { flex: 35; background: var(--giallo); }
+
+  .corpo { flex: 1; display: flex; min-height: 0; }
+  .elenco { width: 360px; flex: none; overflow-y: auto; border-right: 1px solid var(--bordo); background: #fff; }
+  .elenco .intro { padding: 14px 16px; font-size: 14px; color: var(--testo-2); border-bottom: 1px solid var(--bordo); }
+  .voce { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--bordo); cursor: pointer; background: #fff; border-left: 4px solid transparent; width: 100%; text-align: left; font: inherit; color: inherit; border-top: 0; border-right: 0; }
+  .voce:hover, .voce:focus-visible { background: var(--viola-tenue); outline: none; }
+  .voce.attiva { background: var(--viola-tenue); border-left-color: var(--giallo); }
+  .voce .num { flex: none; }
+  .voce .nome { font-weight: 700; color: var(--viola); font-size: 15px; }
+  .voce .paese { font-size: 13px; color: var(--testo-2); margin-top: 1px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .pill { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--viola-tenue); color: var(--viola); font-weight: 500; }
+  .pill.pochi { background: #FFF4CC; color: #6B5200; }
+  .pill.pieno { background: #FDE3E0; color: #A42A1D; }
+
+  #mappa { flex: 1; min-height: 0; background: #e8e4dc; }
+
+  /* Segnaposto numerati */
+  .num, .segnaposto { width: 28px; height: 28px; border-radius: 50%; background: var(--viola); color: #fff;
+    border: 3px solid var(--giallo); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .segnaposto.attivo { background: var(--giallo); color: var(--viola-scuro); border-color: var(--viola); transform: scale(1.2); }
+  .leaflet-div-icon { background: none; border: 0; }
+
+  /* Fumetto */
+  .leaflet-popup-content { margin: 14px 16px; font-family: 'Roboto', Tahoma, Arial, sans-serif; min-width: 220px; }
+  .fumetto h3 { color: var(--viola); font-size: 16px; margin-bottom: 2px; }
+  .fumetto .ind { font-size: 12.5px; color: var(--testo-2); margin-bottom: 8px; }
+  .fumetto p { margin: 0 0 8px; font-size: 13.5px; color: var(--testo); }
+  .fumetto .azioni { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .fumetto a.btn { background: var(--viola); color: #fff; text-decoration: none; padding: 6px 12px; border-radius: var(--raggio); font-weight: 700; font-size: 13px; }
+  .fumetto a.sito { color: var(--viola); font-size: 13px; font-weight: 500; }
+
+  .nota-esempio { flex: none; background: var(--viola-scuro); color: var(--viola-chiaro); font-size: 12px; padding: 8px 20px; }
+
+  @media (max-width: 760px) {
+    .corpo { flex-direction: column; }
+    #mappa { flex: none; height: 55vh; order: -1; }
+    .elenco { width: 100%; border-right: 0; flex: 1; }
+    .testata .riga { padding: 12px 16px; }
+    .testata img { width: 38px; }
+  }
+</style>
+</head>
+<body>
+  <header class="testata">
+    <div class="riga">
+      <img src="../emblema-bianco.svg" alt="Emblema AGESCI" onerror="this.style.display='none'">
+      <div>
+        <div class="zona">AGESCI · Zona Prealpi Vicentine</div>
+        <h1>Le associazioni dei gruppi di lavoro</h1>
+      </div>
+    </div>
+    <div class="striscia"><span></span><span></span></div>
+  </header>
+
+  <div class="corpo">
+    <aside class="elenco" id="elenco" aria-label="Elenco delle associazioni">
+      <div class="intro">Clicca su un'associazione o su un punto della mappa per vedere di cosa si occupa e quanti posti restano nei due turni.</div>
+    </aside>
+    <div id="mappa" role="region" aria-label="Mappa dell'Alto Vicentino"></div>
+  </div>
+
+  <div class="nota-esempio">ESEMPIO: associazioni, indirizzi e posti sono inventati.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // In futuro questi dati arriveranno dal foglio Google (scheda "Gruppi di lavoro":
+  // Nome, Descrizione, Link, Indirizzo, Latitudine, Longitudine, posti rimasti).
+  var ASSOCIAZIONI = [
+    { id: 'G01', nome: 'Orti in Comune', descrizione: 'Orti condivisi e agricoltura sociale con persone in cerca di lavoro.', indirizzo: 'Via dei Campi 12, Thiene', lat: 45.7085, lng: 11.4768, link: 'https://example.org/orti', t1: 14, t2: 20 },
+    { id: 'G02', nome: 'Casa del Ponte', descrizione: 'Accoglienza di famiglie e minori stranieri appena arrivati.', indirizzo: 'Via Pasubio 3, Schio', lat: 45.7137, lng: 11.3592, link: 'https://example.org/ponte', t1: 2, t2: 9 },
+    { id: 'G03', nome: 'Filo d\'Argento Malo', descrizione: 'Compagnia e piccoli servizi per anziani soli.', indirizzo: 'Piazza Zanini 7, Malo', lat: 45.6573, lng: 11.4055, link: '', t1: 20, t2: 18 },
+    { id: 'G04', nome: 'Bosco Vivo', descrizione: 'Cura dei sentieri e dei boschi delle Prealpi.', indirizzo: 'Via Monte Summano 21, Santorso', lat: 45.7349, lng: 11.3905, link: 'https://example.org/bosco', t1: 0, t2: 6 },
+    { id: 'G05', nome: 'La Bottega Equa', descrizione: 'Commercio equo e consumo responsabile.', indirizzo: 'Corso Garibaldi 40, Thiene', lat: 45.7062, lng: 11.4811, link: 'https://example.org/bottega', t1: 11, t2: 11 },
+    { id: 'G06', nome: 'Sport per Tutti', descrizione: 'Attività sportive inclusive per ragazzi con disabilità.', indirizzo: 'Via dello Stadio 5, Marano Vicentino', lat: 45.6935, lng: 11.4275, link: '', t1: 17, t2: 3 },
+    { id: 'G07', nome: 'Protezione Civile Astico', descrizione: 'Volontariato di protezione civile e prevenzione.', indirizzo: 'Via Roma 88, Piovene Rocchette', lat: 45.7562, lng: 11.4318, link: 'https://example.org/pc', t1: 20, t2: 20 },
+    { id: 'G08', nome: 'Biblioteca Diffusa', descrizione: 'Letture ad alta voce e libri nei luoghi di ritrovo.', indirizzo: 'Via Trento 9, Zanè', lat: 45.7215, lng: 11.4512, link: '', t1: 8, t2: 15 },
+    { id: 'G09', nome: 'Mani Tese al Lavoro', descrizione: 'Laboratori artigiani con persone in difficoltà.', indirizzo: 'Via Carrè 30, Sarcedo', lat: 45.7004, lng: 11.5297, link: 'https://example.org/mani', t1: 19, t2: 1 },
+    { id: 'G10', nome: 'Acqua Pulita', descrizione: 'Monitoraggio dei torrenti e raccolta rifiuti lungo l\'Astico.', indirizzo: 'Via Mazzini 2, Breganze', lat: 45.7071, lng: 11.5641, link: '', t1: 12, t2: 12 },
+    { id: 'G11', nome: 'Rifugio dei Ragazzi', descrizione: 'Doposcuola e centro estivo per i ragazzi della valle.', indirizzo: 'Via Monte Cengio 4, Arsiero', lat: 45.8038, lng: 11.3545, link: 'https://example.org/rifugio', t1: 20, t2: 16 },
+    { id: 'G12', nome: 'Pane Condiviso', descrizione: 'Raccolta e distribuzione di alimenti a famiglie in difficoltà.', indirizzo: 'Via Chiesa 15, Carrè', lat: 45.7478, lng: 11.4594, link: '', t1: 5, t2: 20 },
+    { id: 'G13', nome: 'Musica Insieme', descrizione: 'Coro e banda aperti a tutte le età e capacità.', indirizzo: 'Via Rossi 11, Zugliano', lat: 45.7309, lng: 11.5231, link: 'https://example.org/musica', t1: 13, t2: 7 },
+    { id: 'G14', nome: 'Sentieri di Pace', descrizione: 'Memoria della Grande Guerra ed educazione alla pace.', indirizzo: 'Via Alpini 6, Velo d\'Astico', lat: 45.7891, lng: 11.3641, link: '', t1: 20, t2: 20 },
+    { id: 'G15', nome: 'Ciclofficina Solidale', descrizione: 'Riparazione di biciclette e mobilità sostenibile.', indirizzo: 'Via Stazione 1, Villaverla', lat: 45.6495, lng: 11.4932, link: 'https://example.org/bici', t1: 9, t2: 0 },
+    { id: 'G16', nome: 'Il Granaio', descrizione: 'Recupero di antichi mestieri e cultura contadina.', indirizzo: 'Via Leogra 25, Torrebelvicino', lat: 45.7178, lng: 11.3169, link: '', t1: 18, t2: 14 }
+  ];
+  var NOME_TURNO_1 = '1° turno', NOME_TURNO_2 = '2° turno';
+  var URL_ISCRIZIONI = 'https://lorryjam.github.io/assemblea-zona/iscrizioni/';
+
+  function el(tag, cls, testo) { var e = document.createElement(tag); if (cls) e.className = cls; if (testo != null) e.textContent = testo; return e; }
+  function posti(n) { return n <= 0 ? 'pieno' : (n === 1 ? '1 posto' : n + ' posti'); }
+  function pill(etichetta, n) { return el('span', 'pill' + (n <= 0 ? ' pieno' : (n <= 3 ? ' pochi' : '')), etichetta + ': ' + posti(n)); }
+  function paese(ind) { var p = ind.split(','); return p[p.length - 1].trim(); }
+
+  var mappa = L.map('mappa', { scrollWheelZoom: true });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(mappa);
+
+  var voci = {}, marcatori = {}, attivo = null;
+
+  function fumetto(a, n) {
+    var d = el('div', 'fumetto');
+    d.appendChild(el('h3', null, n + '. ' + a.nome));
+    d.appendChild(el('div', 'ind', a.indirizzo));
+    d.appendChild(el('p', null, a.descrizione));
+    var p = el('div', 'pills'); p.appendChild(pill(NOME_TURNO_1, a.t1)); p.appendChild(pill(NOME_TURNO_2, a.t2)); d.appendChild(p);
+    var az = el('div', 'azioni');
+    if (a.t1 > 0 || a.t2 > 0) { var b = el('a', 'btn', 'Iscriviti'); b.href = URL_ISCRIZIONI; b.target = '_blank'; b.rel = 'noopener'; az.appendChild(b); }
+    if (a.link) { var s = el('a', 'sito', 'Sito dell\'associazione ↗'); s.href = a.link; s.target = '_blank'; s.rel = 'noopener noreferrer'; az.appendChild(s); }
+    d.appendChild(az);
+    return d;
+  }
+
+  function seleziona(id, daMappa) {
+    if (attivo) { voci[attivo].classList.remove('attiva'); marcatori[attivo].getElement() && marcatori[attivo].getElement().firstChild.classList.remove('attivo'); }
+    attivo = id;
+    voci[id].classList.add('attiva');
+    var m = marcatori[id];
+    if (m.getElement()) m.getElement().firstChild.classList.add('attivo');
+    if (!daMappa) {
+      mappa.flyTo(m.getLatLng(), Math.max(mappa.getZoom(), 13), { duration: 0.6 });
+      m.openPopup();
+    }
+    voci[id].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  var limiti = [];
+  var elenco = document.getElementById('elenco');
+  ASSOCIAZIONI.forEach(function (a, i) {
+    var n = i + 1;
+    var icona = L.divIcon({ className: '', html: '<div class="segnaposto">' + n + '</div>', iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -14] });
+    var m = L.marker([a.lat, a.lng], { icon: icona, title: a.nome, keyboard: true }).addTo(mappa);
+    m.bindPopup(fumetto(a, n), { maxWidth: 280 });
+    m.on('click', function () { seleziona(a.id, true); });
+    marcatori[a.id] = m;
+    limiti.push([a.lat, a.lng]);
+
+    var v = el('button', 'voce'); v.type = 'button';
+    var num = el('div', 'num', String(n));
+    var testo = el('div');
+    testo.appendChild(el('div', 'nome', a.nome));
+    testo.appendChild(el('div', 'paese', paese(a.indirizzo)));
+    var p = el('div', 'pills'); p.appendChild(pill(NOME_TURNO_1, a.t1)); p.appendChild(pill(NOME_TURNO_2, a.t2)); testo.appendChild(p);
+    v.appendChild(num); v.appendChild(testo);
+    v.addEventListener('click', function () { seleziona(a.id, false); });
+    elenco.appendChild(v);
+    voci[a.id] = v;
+  });
+
+  function centra() { mappa.fitBounds(limiti, { padding: [30, 30] }); }
+  centra();
+
+  // Se la finestra (o l'area della mappa) cambia dimensione, la mappa si riadatta;
+  // se nessuna associazione è selezionata, torna a inquadrare tutti i punti.
+  var ultimaDim = '';
+  function riadatta() {
+    var r = document.getElementById('mappa').getBoundingClientRect();
+    var dim = Math.round(r.width) + 'x' + Math.round(r.height);
+    if (dim === ultimaDim) return;
+    ultimaDim = dim;
+    mappa.invalidateSize();
+    if (!attivo) centra();
+  }
+  if (window.ResizeObserver) new ResizeObserver(riadatta).observe(document.getElementById('mappa'));
+  else window.addEventListener('resize', riadatta);
+})();
+</script>
+</body>
+</html>
