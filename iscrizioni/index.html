@@ -1,115 +1,670 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Iscrizione ai gruppi di lavoro – Assemblea di Zona</title>
-<meta name="description" content="Iscrizione ai gruppi di lavoro dell'Assemblea di Zona – AGESCI Zona Prealpi Vicentine">
-<meta name="theme-color" content="#462678">
-<meta property="og:title" content="Iscrizione ai gruppi di lavoro – Assemblea di Zona">
-<meta property="og:description" content="AGESCI Zona Prealpi Vicentine – scegli i tuoi gruppi di lavoro per i due turni.">
-<meta property="og:image" content="https://lorryjam.github.io/assemblea-zona/icon-512.png">
-<meta property="og:type" content="website">
-<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<style>
-  html, body { margin: 0; height: 100%; background: #462678; overflow: hidden; }
-  body { font: 16px/1.4 Roboto, Tahoma, "Segoe UI", system-ui, sans-serif; color: #fff; }
-  /* La pagina di iscrizione occupa tutto lo schermo */
-  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #F6F4F1; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s; z-index: 1; }
-  #app.ready { opacity: 1; visibility: visible; pointer-events: auto; }
-  /* Schermata d'avvio con l'emblema, finché la pagina non è pronta */
-  #splash { position: fixed; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-    padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom); text-align: center; transition: opacity .25s; }
-  #splash.hide { opacity: 0; pointer-events: none; }
-  #splash img { width: 120px; height: auto; }
-  .zona { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; opacity: .9; }
-  .titolo { font-size: 18px; font-weight: 700; max-width: 340px; }
-  .msg { font-size: 15px; opacity: .85; min-height: 1.4em; max-width: 360px; }
-  .spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.3); border-top-color: #FDC500; border-radius: 50%; animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #retry { display: none; background: #FDC500; color: #211638; border: 0; border-radius: 10px; padding: 12px 22px; font: inherit; font-weight: 700; cursor: pointer; }
-  #direct { display: none; color: #fff; font-size: 15px; text-decoration: underline; padding: 8px; }
-</style>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iscrizione ai gruppi di lavoro – Assemblea di Zona</title>
+  <meta name="description" content="Iscrizione ai gruppi di lavoro dell'Assemblea di Zona – AGESCI Zona Prealpi Vicentine">
+  <meta name="theme-color" content="#462678">
+  <meta property="og:title" content="Iscrizione ai gruppi di lavoro – Assemblea di Zona">
+  <meta property="og:description" content="AGESCI Zona Prealpi Vicentine – scegli i tuoi gruppi di lavoro per i due turni.">
+  <meta property="og:image" content="https://lorryjam.github.io/assemblea-zona/icon-512.png">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://lorryjam.github.io/assemblea-zona/favicon-32.png">
+  <link rel="apple-touch-icon" href="https://lorryjam.github.io/assemblea-zona/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --viola-scuro: #211638;
+      --viola: #462678;
+      --viola-medio: #6B478D;
+      --viola-chiaro: #AEB0D9;
+      --viola-tenue: #F1EEF7;
+      --giallo: #FDC500;
+      --rosso: #E74030;
+      --verde: #21A067;
+      --sabbia: #ECE9E6;
+      --sfondo: #F6F4F1;
+      --testo: #211638;
+      --testo-2: #4A4458;
+      --bordo: #DAD5E3;
+      --raggio: 6px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', Tahoma, Arial, sans-serif;
+      background: var(--sfondo);
+      color: var(--testo);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; margin: 0; }
+    a { color: var(--viola); }
+    a:hover { color: var(--viola-medio); }
+
+    /* ---------- Intestazione ---------- */
+    .testata {
+      background-color: var(--viola);
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 7px),
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.05) 0 1px, transparent 1px 11px);
+      color: #fff;
+    }
+    .testata .contenitore { display: flex; align-items: center; gap: 20px; padding-top: 36px; padding-bottom: 32px; }
+    .testata img.logo { width: 72px; height: auto; flex: none; background: #fff; border-radius: 50%; padding: 4px; }
+    .testata img.emblema { width: 64px; height: auto; flex: none; }
+    .zona { font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--giallo); font-weight: 500; }
+    .testata h1 { font-size: clamp(24px, 4.2vw, 36px); line-height: 1.2; margin-top: 6px; }
+    .striscia { display: flex; height: 8px; }
+    .striscia span:first-child { flex: 65; background: var(--viola-scuro); }
+    .striscia span:last-child { flex: 35; background: var(--giallo); }
+
+    .contenitore { max-width: 1000px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
+    main { padding: 28px 0 48px; }
+
+    .intro { font-size: 17px; color: var(--testo-2); white-space: pre-line; max-width: 720px; margin: 0 0 12px; }
+    .scadenza {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 14px; color: var(--viola); background: var(--viola-tenue);
+      border-left: 4px solid var(--giallo); padding: 6px 12px; border-radius: 0 var(--raggio) var(--raggio) 0;
+    }
+
+    .sezione { margin-top: 36px; }
+    .titolo-sezione { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+    .titolo-sezione h2 { font-size: 22px; color: var(--viola); }
+    .sottotitolo { text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px; color: var(--viola-medio); margin: 0 0 16px; }
+
+    /* ---------- Schede gruppi ---------- */
+    .griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+    .scheda {
+      background: #fff; border: 1px solid var(--bordo); border-top: 4px solid var(--viola);
+      border-radius: var(--raggio); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .scheda h3 { font-size: 17px; color: var(--viola); line-height: 1.3; }
+    .scheda p { margin: 0; font-size: 14px; color: var(--testo-2); flex: 1; }
+    .scheda a.esterno { font-size: 14px; font-weight: 500; text-decoration: none; }
+    .scheda a.esterno:hover { text-decoration: underline; }
+    .posti { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .pill {
+      font-size: 12.5px; padding: 3px 10px; border-radius: 999px; font-weight: 500;
+      background: var(--viola-tenue); color: var(--viola);
+    }
+    .pill.pochi { background: #FFF4CC; color: #6B5200; }
+    .pill.pieno { background: #FDE3E0; color: #A42A1D; }
+
+    /* ---------- Modulo ---------- */
+    .card { background: #fff; border: 1px solid var(--bordo); border-radius: var(--raggio); padding: 24px; }
+    .campi { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; }
+    .campo { display: flex; flex-direction: column; gap: 6px; }
+    .campo.intero { grid-column: 1 / -1; }
+    label { font-weight: 500; font-size: 14px; color: var(--viola-scuro); }
+    input, select {
+      font: inherit; font-size: 16px; color: var(--testo);
+      padding: 11px 12px; border: 1.5px solid var(--bordo); border-radius: var(--raggio); background: #fff;
+      width: 100%; min-height: 46px;
+    }
+    select { appearance: none; -webkit-appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--viola) 50%), linear-gradient(135deg, var(--viola) 50%, transparent 50%);
+      background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+      background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px; }
+    input:focus, select:focus { outline: none; border-color: var(--viola); box-shadow: 0 0 0 3px rgba(253,197,0,0.55); }
+    .campo.errore input, .campo.errore select { border-color: var(--rosso); }
+    .msg-campo { font-size: 13px; color: #A42A1D; min-height: 0; }
+    .msg-campo:empty { display: none; }
+    .turni { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; grid-column: 1 / -1;
+      background: var(--viola-tenue); padding: 16px; border-radius: var(--raggio); }
+    .turni .etichetta-turni { grid-column: 1 / -1; font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--viola); }
+
+    .azioni { margin-top: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    button {
+      font: inherit; font-weight: 700; font-size: 16px; cursor: pointer;
+      border-radius: var(--raggio); padding: 12px 26px; min-height: 48px; border: 2px solid var(--viola);
+      background: var(--viola); color: #fff; letter-spacing: 0.3px;
+    }
+    button:hover { background: var(--viola-scuro); border-color: var(--viola-scuro); }
+    button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(253,197,0,0.7); }
+    button.secondario { background: #fff; color: var(--viola); }
+    button.secondario:hover { background: var(--viola-tenue); }
+    button.pericolo { background: var(--rosso); border-color: var(--rosso); }
+    button.pericolo:hover { background: #B8301F; border-color: #B8301F; }
+    button[disabled] { opacity: .6; cursor: progress; }
+    .nota { font-size: 13px; color: var(--testo-2); }
+
+    .avviso { border-radius: var(--raggio); padding: 12px 16px; margin-bottom: 18px; font-size: 15px; border-left: 4px solid; }
+    .avviso.errore { background: #FDECEA; border-color: var(--rosso); color: #7A1E14; }
+    .avviso.info { background: #FFF8DB; border-color: var(--giallo); color: #5A4600; }
+    .avviso.ok { background: #E6F5EE; border-color: var(--verde); color: #134E33; }
+    .nascosto { display: none !important; }
+
+    /* ---------- Conferma / annullamento ---------- */
+    .conferma h2 { color: var(--viola); font-size: 24px; margin-bottom: 8px; }
+    .assegnazioni { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+    .assegnazione { border-left: 4px solid var(--giallo); background: var(--viola-tenue); padding: 12px 16px; border-radius: 0 var(--raggio) var(--raggio) 0; }
+    .assegnazione .turno { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--viola-medio); }
+    .assegnazione .gruppo { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--viola); font-size: 18px; }
+    .link-box { display: flex; gap: 8px; margin-top: 8px; }
+    .link-box input { font-size: 13px; color: var(--testo-2); background: var(--sfondo); }
+    .link-box button { padding: 8px 16px; min-height: 46px; font-size: 14px; white-space: nowrap; }
+    .saluto { font-family: 'Roboto Slab', Georgia, serif; color: var(--viola); font-size: 18px; margin-top: 18px; }
+
+    .caricamento { text-align: center; padding: 60px 0; color: var(--viola-medio); }
+    .spinner { width: 36px; height: 36px; border: 4px solid var(--viola-chiaro); border-top-color: var(--viola);
+      border-radius: 50%; animation: gira 0.9s linear infinite; margin: 0 auto 12px; }
+    @keyframes gira { to { transform: rotate(360deg); } }
+
+    footer { background: var(--viola-scuro); color: var(--viola-chiaro); font-size: 13px; padding: 18px 0; }
+
+    @media (max-width: 640px) {
+      .campi, .turni, .assegnazioni { grid-template-columns: 1fr; }
+      .card { padding: 18px 16px; }
+      .contenitore { padding-left: 16px; padding-right: 16px; }
+      .testata .contenitore { padding-top: 24px; padding-bottom: 22px; gap: 14px; }
+      .testata img.logo { width: 56px; }
+      .testata img.emblema { width: 48px; }
+      .azioni button { width: 100%; }
+      .link-box { flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
-<div id="splash" role="status" aria-live="polite">
-  <img src="../emblema-bianco.svg" alt="Emblema AGESCI">
-  <div class="zona">Zona Prealpi Vicentine</div>
-  <div class="titolo">Iscrizione ai gruppi di lavoro</div>
-  <div class="spinner" id="spinner"></div>
-  <div class="msg" id="msg">Apertura in corso…</div>
-  <button id="retry" type="button">Riprova</button>
-  <a id="direct" rel="noopener">Apri direttamente la pagina</a>
-</div>
-<iframe id="app" title="Iscrizione ai gruppi di lavoro" allow="clipboard-write"></iframe>
+  <header class="testata">
+    <div class="contenitore">
+      <img id="logo" class="logo nascosto" alt="">
+      <img id="emblema" class="emblema nascosto" alt="Emblema AGESCI">
+      <div>
+        <div class="zona" id="zona">AGESCI</div>
+        <h1 id="titolo">Iscrizione ai gruppi di lavoro</h1>
+      </div>
+    </div>
+    <div class="striscia"><span></span><span></span></div>
+  </header>
+
+  <main class="contenitore">
+    <!-- Caricamento -->
+    <div id="vista-caricamento" class="caricamento">
+      <div class="spinner"></div>
+      Caricamento in corso…
+    </div>
+
+    <!-- Errore generale -->
+    <div id="vista-errore" class="nascosto">
+      <div class="avviso errore" id="testo-errore-generale"></div>
+      <button type="button" onclick="location.reload()">Riprova</button>
+    </div>
+
+    <!-- Iscrizioni chiuse -->
+    <div id="vista-chiusa" class="nascosto">
+      <div class="card">
+        <h2 style="color:var(--viola);margin-bottom:8px;">Le iscrizioni sono chiuse</h2>
+        <p class="nota" style="font-size:15px;margin:0;">Non è più possibile iscriversi ai gruppi di lavoro. Per informazioni contatta i Responsabili di Zona.</p>
+      </div>
+    </div>
+
+    <!-- Iscrizione -->
+    <div id="vista-iscrizione" class="nascosto">
+      <p class="intro" id="intro"></p>
+      <div class="scadenza nascosto" id="scadenza"></div>
+      <div style="margin-top:16px;">
+        <button type="button" class="secondario" id="btn-vai-modulo">Vai all'iscrizione ↓</button>
+      </div>
+
+      <section class="sezione" aria-labelledby="h-gruppi">
+        <div class="titolo-sezione"><h2 id="h-gruppi">I gruppi di lavoro</h2></div>
+        <p class="sottotitolo">Posti ancora disponibili per ciascun turno</p>
+        <div class="griglia" id="griglia-gruppi"></div>
+      </section>
+
+      <section class="sezione" aria-labelledby="h-modulo">
+        <div class="titolo-sezione"><h2 id="h-modulo">Iscriviti</h2></div>
+        <p class="sottotitolo">Tutti i campi sono obbligatori</p>
+        <form id="modulo" class="card" novalidate>
+          <div id="avviso-modulo" class="avviso errore nascosto" role="alert"></div>
+          <div class="campi">
+            <div class="campo" data-campo="nome">
+              <label for="nome">Nome</label>
+              <input id="nome" name="nome" autocomplete="given-name" maxlength="80" required>
+              <div class="msg-campo"></div>
+            </div>
+            <div class="campo" data-campo="cognome">
+              <label for="cognome">Cognome</label>
+              <input id="cognome" name="cognome" autocomplete="family-name" maxlength="80" required>
+              <div class="msg-campo"></div>
+            </div>
+            <div class="campo" data-campo="email">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" maxlength="120" required>
+              <div class="msg-campo"></div>
+            </div>
+            <div class="campo" data-campo="gruppoScout">
+              <label for="gruppoScout">Gruppo scout</label>
+              <select id="gruppoScout" name="gruppoScout" required></select>
+              <div class="msg-campo"></div>
+            </div>
+            <div class="turni">
+              <div class="etichetta-turni">Gruppi di lavoro</div>
+              <div class="campo" data-campo="turno1">
+                <label for="turno1" id="lbl-turno1">1° turno</label>
+                <select id="turno1" name="turno1" required></select>
+                <div class="msg-campo"></div>
+              </div>
+              <div class="campo" data-campo="turno2">
+                <label for="turno2" id="lbl-turno2">2° turno</label>
+                <select id="turno2" name="turno2" required></select>
+                <div class="msg-campo"></div>
+              </div>
+            </div>
+          </div>
+          <div class="azioni">
+            <button type="submit" id="btn-invia">Conferma iscrizione</button>
+            <span class="nota">Entro domani riceverai una mail di conferma.</span>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- Conferma -->
+    <div id="vista-conferma" class="nascosto">
+      <div class="card conferma">
+        <div class="avviso ok">Iscrizione registrata correttamente.</div>
+        <h2 id="conf-titolo"></h2>
+        <div class="assegnazioni">
+          <div class="assegnazione"><div class="turno" id="conf-t1-lbl"></div><div class="gruppo" id="conf-t1"></div></div>
+          <div class="assegnazione"><div class="turno" id="conf-t2-lbl"></div><div class="gruppo" id="conf-t2"></div></div>
+        </div>
+        <div id="conf-mail" class="avviso info"></div>
+        <p style="margin:0;font-size:15px;">Se non potrai partecipare o vorrai cambiare gruppi, usa questo link per annullare l'iscrizione (poi potrai iscriverti di nuovo):</p>
+        <div class="link-box">
+          <input id="conf-link" readonly aria-label="Link per annullare l'iscrizione">
+          <button type="button" class="secondario" id="btn-copia">Copia link</button>
+        </div>
+        <p class="saluto" id="conf-saluto"></p>
+      </div>
+    </div>
+
+    <!-- Annullamento -->
+    <div id="vista-annulla" class="nascosto">
+      <div class="card">
+        <h2 style="color:var(--viola);margin-bottom:8px;">Annulla iscrizione</h2>
+        <div id="ann-avviso" class="avviso nascosto"></div>
+        <div id="ann-dettagli" class="nascosto">
+          <p style="margin:0 0 4px;font-size:15px;">Stai per annullare l'iscrizione di <strong id="ann-nome"></strong>:</p>
+          <div class="assegnazioni">
+            <div class="assegnazione"><div class="turno" id="ann-t1-lbl"></div><div class="gruppo" id="ann-t1"></div></div>
+            <div class="assegnazione"><div class="turno" id="ann-t2-lbl"></div><div class="gruppo" id="ann-t2"></div></div>
+          </div>
+          <p class="nota" style="font-size:14px;">I posti verranno liberati per altre persone. L'operazione non si può annullare, ma potrai iscriverti di nuovo se ci sono ancora posti.</p>
+          <div class="azioni">
+            <button type="button" class="pericolo" id="btn-annulla">Sì, annulla la mia iscrizione</button>
+          </div>
+        </div>
+        <div class="azioni nascosto" id="ann-nuova">
+          <a id="link-nuova" href="#">Vai alla pagina delle iscrizioni</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="contenitore" id="piede">AGESCI</div>
+  </footer>
 
 <script>
 (function () {
   'use strict';
-  // Indirizzo della pagina di iscrizione (Google Apps Script). Se un giorno cambia, si modifica solo questa riga.
+
+  // Indirizzo del "motore" Google (Apps Script). Serve quando la pagina è aperta da GitHub.
+  // Se un giorno cambia (deployment nuovo), si modifica solo questa riga.
   var APP_URL = 'https://script.google.com/macros/s/AKfycbxs4OwyuviXnYrP1HmVRmosJAD1qVoIhiz2MSgzNb1qRXNDSFB5xUKr4zJN8Z4Lodd6TQ/exec';
+  var TEMPO_MAX_LETTURA_MS = 30000;
+  var TEMPO_MAX_INVIO_MS = 60000;
 
-  // Se entro questo tempo la pagina non dice "sono pronta", mostro Riprova e il link diretto
-  var READY_TIMEOUT_MS = 20000;
+  // true quando la pagina è servita da Google (indirizzo /exec), false quando è su GitHub
+  var suGoogle = !!(window.google && window.google.script && window.google.script.run);
 
-  var frame = document.getElementById('app');
-  var splash = document.getElementById('splash');
-  var msg = document.getElementById('msg');
-  var retry = document.getElementById('retry');
-  var direct = document.getElementById('direct');
-  var spinner = document.getElementById('spinner');
-  var timer = null;
+  var stato = { dati: null, invioInCorso: false, aggiornamento: null, baseUrl: '' };
 
-  // Inoltro alla pagina Google solo il codice di annullamento (link della mail di conferma), se valido
-  var parametri = '';
-  try {
-    var codice = new URLSearchParams(window.location.search).get('annulla') || '';
-    if (/^[0-9a-f-]{36}$/i.test(codice)) parametri = 'annulla=' + encodeURIComponent(codice);
-  } catch (e) { parametri = ''; }
-
-  var urlDiretto = APP_URL + (parametri ? '?' + parametri : '');
-  direct.href = urlDiretto;
-
-  function show() {
-    clearTimeout(timer);
-    frame.classList.add('ready');
-    splash.classList.add('hide');
+  // ---------- utilità ----------
+  function $(id) { return document.getElementById(id); }
+  function mostra(id) {
+    ['vista-caricamento', 'vista-errore', 'vista-chiusa', 'vista-iscrizione', 'vista-conferma', 'vista-annulla']
+      .forEach(function (v) { $(v).classList.toggle('nascosto', v !== id); });
+    window.scrollTo(0, 0);
+  }
+  function el(tag, cls, testo) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (testo !== undefined && testo !== null) e.textContent = testo;
+    return e;
+  }
+  function chiama(funzione, arg) {
+    if (suGoogle) {
+      return new Promise(function (resolve, reject) {
+        var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+        r[funzione](arg);
+      });
+    }
+    return chiamaApi(funzione, arg);
   }
 
-  function fail(text, withDirectLink) {
-    clearTimeout(timer);
-    spinner.style.display = 'none';
-    msg.textContent = text;
-    retry.style.display = 'inline-block';
-    direct.style.display = withDirectLink ? 'inline-block' : 'none';
-    splash.classList.remove('hide');
-    frame.classList.remove('ready');
+  // Chiamata al motore Google SENZA inviare gli accessi del browser (credentials: 'omit'):
+  // per Google è una richiesta anonima, come da finestra in incognito. Così non si incappa nel
+  // difetto di Google con più account collegati ("Impossibile aprire il file in questo momento").
+  function chiamaApi(funzione, arg) {
+    var letture = { getDatiPagina: 'dati', getIscrizione: 'iscrizione' };
+    var invii = { iscrivi: 'iscrivi', annulla: 'annulla' };
+    var url, tempoMax;
+    var opz = { credentials: 'omit', redirect: 'follow', cache: 'no-store' };
+    if (letture[funzione]) {
+      url = APP_URL + '?azione=' + letture[funzione] +
+        (funzione === 'getIscrizione' ? '&codice=' + encodeURIComponent(arg || '') : '') +
+        '&t=' + Date.now();
+      opz.method = 'GET';
+      tempoMax = TEMPO_MAX_LETTURA_MS;
+    } else if (invii[funzione]) {
+      url = APP_URL;
+      opz.method = 'POST';
+      opz.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
+      opz.body = JSON.stringify({ azione: invii[funzione], dati: arg === undefined ? null : arg });
+      tempoMax = TEMPO_MAX_INVIO_MS;
+    } else {
+      return Promise.reject(new Error('funzione sconosciuta'));
+    }
+    var ctrl = window.AbortController ? new AbortController() : null;
+    if (ctrl) opz.signal = ctrl.signal;
+    return new Promise(function (resolve, reject) {
+      var finito = false;
+      function fine(err, val) { if (finito) return; finito = true; clearTimeout(timer); if (err) reject(err); else resolve(val); }
+      var timer = setTimeout(function () {
+        if (ctrl) ctrl.abort();
+        fine(new Error('Google non risponde (tempo scaduto)'));
+      }, tempoMax);
+      fetch(url, opz).then(function (r) {
+        if (!r.ok) throw new Error('errore del server (' + r.status + ')');
+        return r.json();
+      }).then(function (x) {
+        if (!x || x.esito !== 'ok') throw new Error((x && x.messaggio) || 'risposta non valida');
+        fine(null, x.risultato);
+      }).catch(function (e) {
+        if (e && e.name === 'AbortError') return fine(new Error('Google non risponde (tempo scaduto)'));
+        if (e instanceof TypeError) return fine(new Error('impossibile contattare Google, controlla la connessione'));
+        fine(e);
+      });
+    });
   }
 
-  function open() {
-    retry.style.display = 'none';
-    direct.style.display = 'none';
-    spinner.style.display = 'block';
-    msg.textContent = 'Apertura in corso…';
-    if (!navigator.onLine) { fail('Nessuna connessione a internet. Collegati al Wi-Fi o attiva i dati e premi Riprova.', false); return; }
-    clearTimeout(timer);
-    timer = setTimeout(function () {
-      fail('La pagina non si apre. Controlla la connessione e premi Riprova, oppure apri direttamente la pagina.', true);
-    }, READY_TIMEOUT_MS);
-    frame.src = APP_URL + '?' + (parametri ? parametri + '&' : '') + 't=' + Date.now();
+  function leggiParametri(cb) {
+    if (suGoogle && google.script.url) {
+      google.script.url.getLocation(function (loc) { cb((loc && loc.parameter) || {}); });
+      return;
+    }
+    var p = {};
+    try { new URLSearchParams(window.location.search).forEach(function (v, k) { p[k] = v; }); } catch (e) { p = {}; }
+    cb(p);
+  }
+  function erroreGenerale(e) {
+    $('testo-errore-generale').textContent = 'Si è verificato un problema: ' + ((e && e.message) || e) + '. Riprova tra poco.';
+    mostra('vista-errore');
+  }
+  function testoPosti(n) {
+    if (n <= 0) return 'pieno';
+    return n === 1 ? '1 posto' : n + ' posti';
   }
 
-  // La pagina si considera aperta SOLO quando la pagina di iscrizione manda il messaggio "gdl-ready".
-  // L'evento "load" dell'iframe non basta: scatta anche quando al posto della pagina c'è l'errore
-  // del browser, che non manda nessun messaggio. Il messaggio toglie solo la schermata d'avvio.
-  window.addEventListener('message', function (ev) {
-    if (ev.data === 'gdl-ready') show();
-  });
-  retry.addEventListener('click', open);
-  window.addEventListener('online', function () { if (retry.style.display !== 'none') open(); });
+  // ---------- intestazione ----------
+  function applicaImpostazioni(imp) {
+    document.title = imp.titolo;
+    $('titolo').textContent = imp.titolo;
+    $('zona').textContent = imp.zona ? 'AGESCI · ' + imp.zona : 'AGESCI';
+    $('piede').textContent = imp.zona ? 'AGESCI · ' + imp.zona : 'AGESCI';
+    if (imp.urlLogo) { $('logo').src = imp.urlLogo; $('logo').alt = 'Logo ' + (imp.zona || ''); $('logo').classList.remove('nascosto'); }
+    else if (!suGoogle) { $('emblema').src = '../emblema-bianco.svg'; $('emblema').classList.remove('nascosto'); }
+    $('lbl-turno1').textContent = imp.nomeTurno1;
+    $('lbl-turno2').textContent = imp.nomeTurno2;
+  }
 
-  open();
+  // ---------- gruppi ----------
+  function disegnaSchede(gruppi, imp) {
+    var griglia = $('griglia-gruppi');
+    griglia.innerHTML = '';
+    gruppi.forEach(function (g) {
+      var s = el('article', 'scheda');
+      s.appendChild(el('h3', null, g.nome));
+      if (g.descrizione) s.appendChild(el('p', null, g.descrizione));
+      else s.appendChild(el('p'));
+      if (g.link) {
+        var a = el('a', 'esterno', 'Scopri l\'associazione ↗');
+        a.href = g.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        s.appendChild(a);
+      }
+      var p = el('div', 'posti');
+      [[imp.nomeTurno1, g.postiT1], [imp.nomeTurno2, g.postiT2]].forEach(function (t) {
+        var cls = 'pill' + (t[1] <= 0 ? ' pieno' : (t[1] <= 3 ? ' pochi' : ''));
+        p.appendChild(el('span', cls, t[0] + ': ' + testoPosti(t[1])));
+      });
+      s.appendChild(p);
+      griglia.appendChild(s);
+    });
+  }
+
+  function riempiSelectTurno(select, gruppi, chiavePosti) {
+    var scelto = select.value;
+    select.innerHTML = '';
+    var vuota = el('option', null, '— Scegli un gruppo —'); vuota.value = '';
+    select.appendChild(vuota);
+    var ancoraValido = false;
+    gruppi.forEach(function (g) {
+      var posti = g[chiavePosti];
+      var o = el('option', null, g.nome + (posti <= 0 ? ' — PIENO' : ' — ' + testoPosti(posti)));
+      o.value = g.id;
+      if (posti <= 0) o.disabled = true;
+      if (g.id === scelto && posti > 0) ancoraValido = true;
+      select.appendChild(o);
+    });
+    select.value = ancoraValido ? scelto : '';
+    return scelto && !ancoraValido; // true se la scelta precedente è diventata piena
+  }
+
+  function riempiGruppiScout(elenco) {
+    var s = $('gruppoScout');
+    var scelto = s.value;
+    s.innerHTML = '';
+    var vuota = el('option', null, '— Scegli il tuo gruppo —'); vuota.value = '';
+    s.appendChild(vuota);
+    elenco.forEach(function (n) { var o = el('option', null, n); o.value = n; s.appendChild(o); });
+    if (elenco.indexOf(scelto) !== -1) s.value = scelto;
+  }
+
+  function aggiornaGruppi(gruppi) {
+    stato.dati.gruppi = gruppi;
+    disegnaSchede(gruppi, stato.dati.impostazioni);
+    var persi = [];
+    if (riempiSelectTurno($('turno1'), gruppi, 'postiT1')) persi.push('turno1');
+    if (riempiSelectTurno($('turno2'), gruppi, 'postiT2')) persi.push('turno2');
+    persi.forEach(function (c) { erroreCampo(c, 'Il gruppo che avevi scelto si è riempito: scegline un altro.'); });
+  }
+
+  // ---------- errori modulo ----------
+  function pulisciErrori() {
+    $('avviso-modulo').classList.add('nascosto');
+    document.querySelectorAll('.campo').forEach(function (c) {
+      c.classList.remove('errore');
+      c.querySelector('.msg-campo').textContent = '';
+    });
+  }
+  function erroreCampo(campo, msg) {
+    var c = document.querySelector('.campo[data-campo="' + campo + '"]');
+    if (!c) return;
+    c.classList.add('errore');
+    c.querySelector('.msg-campo').textContent = msg;
+  }
+  function avvisoModulo(msg) {
+    var a = $('avviso-modulo');
+    a.textContent = msg;
+    a.classList.remove('nascosto');
+    a.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function validaClient(d) {
+    if (!d.nome) return ['nome', 'Inserisci il nome.'];
+    if (!d.cognome) return ['cognome', 'Inserisci il cognome.'];
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) return ['email', 'Inserisci un indirizzo email valido.'];
+    if (!d.gruppoScout) return ['gruppoScout', 'Seleziona il tuo gruppo scout.'];
+    if (!d.turno1) return ['turno1', 'Scegli il gruppo di lavoro di questo turno.'];
+    if (!d.turno2) return ['turno2', 'Scegli il gruppo di lavoro di questo turno.'];
+    if (d.turno1 === d.turno2) return ['turno2', 'Nei due turni devi scegliere due gruppi diversi.'];
+    return null;
+  }
+
+  // ---------- invio ----------
+  function invia(ev) {
+    ev.preventDefault();
+    if (stato.invioInCorso) return;
+    pulisciErrori();
+    var d = {
+      nome: $('nome').value.trim(),
+      cognome: $('cognome').value.trim(),
+      email: $('email').value.trim(),
+      gruppoScout: $('gruppoScout').value,
+      turno1: $('turno1').value,
+      turno2: $('turno2').value
+    };
+    var err = validaClient(d);
+    if (err) {
+      erroreCampo(err[0], err[1]);
+      avvisoModulo('Controlla i campi evidenziati.');
+      return;
+    }
+    stato.invioInCorso = true;
+    var btn = $('btn-invia');
+    btn.disabled = true; btn.textContent = 'Invio in corso…';
+    chiama('iscrivi', d).then(function (r) {
+      if (r && r.ok) { mostraConferma(r); return; }
+      r = r || {};
+      if (r.chiuse) { fermaAggiornamento(); mostra('vista-chiusa'); return; }
+      if (r.gruppi) aggiornaGruppi(r.gruppi);
+      if (r.campo) erroreCampo(r.campo, r.messaggio);
+      avvisoModulo(r.messaggio || 'Iscrizione non riuscita.');
+    }).catch(function (e) {
+      avvisoModulo('Problema di collegamento: ' + ((e && e.message) || e) + '. Riprova.');
+    }).then(function () {
+      stato.invioInCorso = false;
+      btn.disabled = false; btn.textContent = 'Conferma iscrizione';
+    });
+  }
+
+  function mostraConferma(r) {
+    fermaAggiornamento();
+    var imp = stato.dati.impostazioni;
+    $('conf-titolo').textContent = 'Grazie ' + r.nome + ', ci vediamo all\'assemblea!';
+    $('conf-t1-lbl').textContent = imp.nomeTurno1;
+    $('conf-t2-lbl').textContent = imp.nomeTurno2;
+    $('conf-t1').textContent = r.turno1.nome;
+    $('conf-t2').textContent = r.turno2.nome;
+    $('conf-mail').textContent = r.mailInviata
+      ? 'Ti abbiamo inviato una mail di conferma a ' + r.email + ' (controlla anche lo spam).'
+      : 'Non è stato possibile inviare subito la mail di conferma: la riceverai entro domani. Intanto salva il link qui sotto.';
+    $('conf-link').value = r.linkAnnulla;
+    $('conf-saluto').textContent = imp.saluto || '';
+    mostra('vista-conferma');
+  }
+
+  function copiaLink() {
+    var inp = $('conf-link');
+    var fatto = function () { $('btn-copia').textContent = 'Copiato ✓'; setTimeout(function () { $('btn-copia').textContent = 'Copia link'; }, 2000); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(inp.value).then(fatto, function () { inp.select(); document.execCommand('copy'); fatto(); });
+    } else { inp.select(); document.execCommand('copy'); fatto(); }
+  }
+
+  // ---------- aggiornamento periodico dei posti ----------
+  function avviaAggiornamento() {
+    fermaAggiornamento();
+    stato.aggiornamento = setInterval(function () {
+      if (stato.invioInCorso || document.hidden) return;
+      chiama('getDatiPagina').then(function (d) {
+        if (!d.aperte) { fermaAggiornamento(); mostra('vista-chiusa'); return; }
+        aggiornaGruppi(d.gruppi);
+      }).catch(function () { /* silenzioso: si riprova al giro successivo */ });
+    }, 60000);
+  }
+  function fermaAggiornamento() { if (stato.aggiornamento) clearInterval(stato.aggiornamento); stato.aggiornamento = null; }
+
+  // ---------- annullamento ----------
+  function avviaAnnullamento(codice) {
+    mostra('vista-annulla');
+    $('ann-t1-lbl').textContent = stato.dati.impostazioni.nomeTurno1;
+    $('ann-t2-lbl').textContent = stato.dati.impostazioni.nomeTurno2;
+    $('link-nuova').href = stato.baseUrl || '#';
+    chiama('getIscrizione', codice).then(function (r) {
+      if (!r.ok) { avvisoAnnulla('errore', r.messaggio); return; }
+      if (r.stato === 'Annullata') {
+        avvisoAnnulla('info', 'Questa iscrizione è già stata annullata.');
+        $('ann-nuova').classList.remove('nascosto');
+        return;
+      }
+      $('ann-nome').textContent = r.nome + ' ' + r.cognome;
+      $('ann-t1').textContent = r.turno1;
+      $('ann-t2').textContent = r.turno2;
+      $('ann-dettagli').classList.remove('nascosto');
+      $('btn-annulla').onclick = function () {
+        var b = $('btn-annulla');
+        b.disabled = true; b.textContent = 'Annullamento in corso…';
+        chiama('annulla', codice).then(function (x) {
+          if (!x.ok) { avvisoAnnulla('errore', x.messaggio); b.disabled = false; b.textContent = 'Sì, annulla la mia iscrizione'; return; }
+          $('ann-dettagli').classList.add('nascosto');
+          avvisoAnnulla('ok', 'Iscrizione annullata. I posti sono stati liberati.');
+          $('ann-nuova').classList.remove('nascosto');
+        }).catch(function (e) {
+          avvisoAnnulla('errore', 'Problema di collegamento: ' + ((e && e.message) || e) + '. Riprova.');
+          b.disabled = false; b.textContent = 'Sì, annulla la mia iscrizione';
+        });
+      };
+    }).catch(erroreGenerale);
+  }
+  function avvisoAnnulla(tipo, msg) {
+    var a = $('ann-avviso');
+    a.className = 'avviso ' + tipo;
+    a.textContent = msg;
+  }
+
+  // ---------- avvio ----------
+  function avvia(parametri) {
+    chiama('getDatiPagina').then(function (d) {
+      stato.dati = d;
+      stato.baseUrl = d.urlPagina || '';
+      applicaImpostazioni(d.impostazioni);
+      if (parametri.annulla) { avviaAnnullamento(parametri.annulla); return; }
+      if (!d.aperte) { mostra('vista-chiusa'); return; }
+      $('intro').textContent = d.impostazioni.testoIntro;
+      if (d.impostazioni.chiusuraTesto) {
+        $('scadenza').textContent = 'Iscrizioni aperte fino al ' + d.impostazioni.chiusuraTesto;
+        $('scadenza').classList.remove('nascosto');
+      }
+      riempiGruppiScout(d.gruppiScout);
+      aggiornaGruppi(d.gruppi);
+      $('modulo').addEventListener('submit', invia);
+      $('btn-copia').addEventListener('click', copiaLink);
+      $('btn-vai-modulo').addEventListener('click', function () {
+        $('h-modulo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(function () { $('nome').focus({ preventScroll: true }); }, 400);
+      });
+      ['turno1', 'turno2', 'nome', 'cognome', 'email', 'gruppoScout'].forEach(function (id) {
+        $(id).addEventListener('change', function () {
+          var c = document.querySelector('.campo[data-campo="' + id + '"]');
+          c.classList.remove('errore'); c.querySelector('.msg-campo').textContent = '';
+        });
+      });
+      mostra('vista-iscrizione');
+      avviaAggiornamento();
+    }).catch(erroreGenerale);
+  }
+
+  leggiParametri(avvia);
 })();
 </script>
 </body>
