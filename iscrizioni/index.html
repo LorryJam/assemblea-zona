@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iscrizione ai gruppi di lavoro – Assemblea di Zona</title>
+<meta name="description" content="Iscrizione ai gruppi di lavoro dell'Assemblea di Zona – AGESCI Zona Prealpi Vicentine">
+<meta name="theme-color" content="#462678">
+<meta property="og:title" content="Iscrizione ai gruppi di lavoro – Assemblea di Zona">
+<meta property="og:description" content="AGESCI Zona Prealpi Vicentine – scegli i tuoi gruppi di lavoro per i due turni.">
+<meta property="og:image" content="https://lorryjam.github.io/assemblea-zona/icon-512.png">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+  html, body { margin: 0; height: 100%; background: #462678; overflow: hidden; }
+  body { font: 16px/1.4 Roboto, Tahoma, "Segoe UI", system-ui, sans-serif; color: #fff; }
+  /* La pagina di iscrizione occupa tutto lo schermo */
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #F6F4F1; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s; z-index: 1; }
+  #app.ready { opacity: 1; visibility: visible; pointer-events: auto; }
+  /* Schermata d'avvio con l'emblema, finché la pagina non è pronta */
+  #splash { position: fixed; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom); text-align: center; transition: opacity .25s; }
+  #splash.hide { opacity: 0; pointer-events: none; }
+  #splash img { width: 120px; height: auto; }
+  .zona { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; opacity: .9; }
+  .titolo { font-size: 18px; font-weight: 700; max-width: 340px; }
+  .msg { font-size: 15px; opacity: .85; min-height: 1.4em; max-width: 360px; }
+  .spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.3); border-top-color: #FDC500; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #retry { display: none; background: #FDC500; color: #211638; border: 0; border-radius: 10px; padding: 12px 22px; font: inherit; font-weight: 700; cursor: pointer; }
+  #direct { display: none; color: #fff; font-size: 15px; text-decoration: underline; padding: 8px; }
+</style>
+</head>
+<body>
+<div id="splash" role="status" aria-live="polite">
+  <img src="../emblema-bianco.svg" alt="Emblema AGESCI">
+  <div class="zona">Zona Prealpi Vicentine</div>
+  <div class="titolo">Iscrizione ai gruppi di lavoro</div>
+  <div class="spinner" id="spinner"></div>
+  <div class="msg" id="msg">Apertura in corso…</div>
+  <button id="retry" type="button">Riprova</button>
+  <a id="direct" rel="noopener">Apri direttamente la pagina</a>
+</div>
+<iframe id="app" title="Iscrizione ai gruppi di lavoro" allow="clipboard-write"></iframe>
+
+<script>
+(function () {
+  'use strict';
+  // Indirizzo della pagina di iscrizione (Google Apps Script). Se un giorno cambia, si modifica solo questa riga.
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbxs4OwyuviXnYrP1HmVRmosJAD1qVoIhiz2MSgzNb1qRXNDSFB5xUKr4zJN8Z4Lodd6TQ/exec';
+
+  // Se entro questo tempo la pagina non dice "sono pronta", mostro Riprova e il link diretto
+  var READY_TIMEOUT_MS = 20000;
+
+  var frame = document.getElementById('app');
+  var splash = document.getElementById('splash');
+  var msg = document.getElementById('msg');
+  var retry = document.getElementById('retry');
+  var direct = document.getElementById('direct');
+  var spinner = document.getElementById('spinner');
+  var timer = null;
+
+  // Inoltro alla pagina Google solo il codice di annullamento (link della mail di conferma), se valido
+  var parametri = '';
+  try {
+    var codice = new URLSearchParams(window.location.search).get('annulla') || '';
+    if (/^[0-9a-f-]{36}$/i.test(codice)) parametri = 'annulla=' + encodeURIComponent(codice);
+  } catch (e) { parametri = ''; }
+
+  var urlDiretto = APP_URL + (parametri ? '?' + parametri : '');
+  direct.href = urlDiretto;
+
+  function show() {
+    clearTimeout(timer);
+    frame.classList.add('ready');
+    splash.classList.add('hide');
+  }
+
+  function fail(text, withDirectLink) {
+    clearTimeout(timer);
+    spinner.style.display = 'none';
+    msg.textContent = text;
+    retry.style.display = 'inline-block';
+    direct.style.display = withDirectLink ? 'inline-block' : 'none';
+    splash.classList.remove('hide');
+    frame.classList.remove('ready');
+  }
+
+  function open() {
+    retry.style.display = 'none';
+    direct.style.display = 'none';
+    spinner.style.display = 'block';
+    msg.textContent = 'Apertura in corso…';
+    if (!navigator.onLine) { fail('Nessuna connessione a internet. Collegati al Wi-Fi o attiva i dati e premi Riprova.', false); return; }
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      fail('La pagina non si apre. Controlla la connessione e premi Riprova, oppure apri direttamente la pagina.', true);
+    }, READY_TIMEOUT_MS);
+    frame.src = APP_URL + '?' + (parametri ? parametri + '&' : '') + 't=' + Date.now();
+  }
+
+  // La pagina si considera aperta SOLO quando la pagina di iscrizione manda il messaggio "gdl-ready".
+  // L'evento "load" dell'iframe non basta: scatta anche quando al posto della pagina c'è l'errore
+  // del browser, che non manda nessun messaggio. Il messaggio toglie solo la schermata d'avvio.
+  window.addEventListener('message', function (ev) {
+    if (ev.data === 'gdl-ready') show();
+  });
+  retry.addEventListener('click', open);
+  window.addEventListener('online', function () { if (retry.style.display !== 'none') open(); });
+
+  open();
+})();
+</script>
+</body>
+</html>
