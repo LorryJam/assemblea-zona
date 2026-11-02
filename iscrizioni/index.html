@@ -119,6 +119,7 @@
     .turni { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; grid-column: 1 / -1;
       background: var(--viola-tenue); padding: 16px; border-radius: var(--raggio); }
     .turni .etichetta-turni { grid-column: 1 / -1; font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--viola); }
+    .turni .nota-limite { grid-column: 1 / -1; margin: -6px 0 0; font-size: 13px; color: var(--testo-2); }
 
     .azioni { margin-top: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     button {
@@ -265,6 +266,7 @@
             </div>
             <div class="turni">
               <div class="etichetta-turni">Gruppi di lavoro</div>
+              <p id="nota-limite" class="nota-limite nascosto"></p>
               <div class="campo" data-campo="turno1">
                 <label for="turno1" id="lbl-turno1">1° turno</label>
                 <select id="turno1" name="turno1" required></select>
@@ -469,22 +471,55 @@
     });
   }
 
-  function riempiSelectTurno(select, gruppi, chiavePosti) {
+  // Limite di persone dello stesso gruppo scout per gruppo di lavoro e turno (0 = nessun limite)
+  function maxPerScout() {
+    var n = stato.dati && stato.dati.impostazioni && stato.dati.impostazioni.maxPerScout;
+    return n > 0 ? n : 0;
+  }
+  function limiteScoutRaggiunto(g, turno, scout) {
+    var max = maxPerScout();
+    if (!max || !scout) return false;
+    var conti = g['scoutT' + turno] || {};
+    return (conti[scout] || 0) >= max;
+  }
+
+  // Riempie il menu di un turno. Restituisce '' se la scelta precedente è ancora valida
+  // (o non c'era), 'pieno' o 'limite' se è diventata non disponibile.
+  function riempiSelectTurno(select, gruppi, turno) {
     var scelto = select.value;
+    var scout = $('gruppoScout').value;
+    var max = maxPerScout();
     select.innerHTML = '';
     var vuota = el('option', null, '— Scegli un gruppo —'); vuota.value = '';
     select.appendChild(vuota);
-    var ancoraValido = false;
+    var esito = scelto ? 'pieno' : '';
     gruppi.forEach(function (g) {
-      var posti = g[chiavePosti];
-      var o = el('option', null, g.nome + (posti <= 0 ? ' — PIENO' : ' — ' + testoPosti(posti)));
+      var posti = g['postiT' + turno];
+      var limite = posti > 0 && limiteScoutRaggiunto(g, turno, scout);
+      var testo = posti <= 0 ? ' — PIENO'
+        : (limite ? ' — già ' + max + ' del tuo gruppo' : ' — ' + testoPosti(posti));
+      var o = el('option', null, g.nome + testo);
       o.value = g.id;
-      if (posti <= 0) o.disabled = true;
-      if (g.id === scelto && posti > 0) ancoraValido = true;
+      if (posti <= 0 || limite) o.disabled = true;
+      if (g.id === scelto) esito = posti <= 0 ? 'pieno' : (limite ? 'limite' : '');
       select.appendChild(o);
     });
-    select.value = ancoraValido ? scelto : '';
-    return scelto && !ancoraValido; // true se la scelta precedente è diventata piena
+    select.value = esito ? '' : scelto;
+    return esito;
+  }
+
+  // Ridisegna i menu dei turni e segnala le scelte che non sono più disponibili
+  function aggiornaMenuTurni(gruppi) {
+    [1, 2].forEach(function (turno) {
+      var esito = riempiSelectTurno($('turno' + turno), gruppi, turno);
+      if (esito === 'pieno') erroreCampo('turno' + turno, 'Il gruppo che avevi scelto si è riempito: scegline un altro.');
+      if (esito === 'limite') erroreCampo('turno' + turno, 'In questo gruppo ci sono già ' + maxPerScout() + ' iscritti del tuo gruppo scout: scegline un altro.');
+    });
+    var nota = $('nota-limite');
+    var max = maxPerScout();
+    nota.textContent = max ? 'Al massimo ' + max + (max === 1 ? ' persona' : ' persone') +
+      ' dello stesso gruppo scout per ogni gruppo di lavoro e turno.' : '';
+    nota.classList.toggle('nascosto', !max);
   }
 
   function riempiGruppiScout(elenco) {
@@ -500,10 +535,7 @@
   function aggiornaGruppi(gruppi) {
     stato.dati.gruppi = gruppi;
     disegnaSchede(gruppi, stato.dati.impostazioni);
-    var persi = [];
-    if (riempiSelectTurno($('turno1'), gruppi, 'postiT1')) persi.push('turno1');
-    if (riempiSelectTurno($('turno2'), gruppi, 'postiT2')) persi.push('turno2');
-    persi.forEach(function (c) { erroreCampo(c, 'Il gruppo che avevi scelto si è riempito: scegline un altro.'); });
+    aggiornaMenuTurni(gruppi);
   }
 
   // ---------- errori modulo ----------
@@ -607,6 +639,7 @@
       if (stato.invioInCorso || document.hidden) return;
       chiama('getDatiPagina').then(function (d) {
         if (!d.aperte) { fermaAggiornamento(); mostraSecondoStato(d); return; }
+        stato.dati.impostazioni = d.impostazioni; // es. limite per gruppo scout cambiato nel foglio
         aggiornaGruppi(d.gruppi);
       }).catch(function () { /* silenzioso: si riprova al giro successivo */ });
     }, 60000);
@@ -749,6 +782,10 @@
           var c = document.querySelector('.campo[data-campo="' + id + '"]');
           c.classList.remove('errore'); c.querySelector('.msg-campo').textContent = '';
         });
+      });
+      // cambiando gruppo scout, i gruppi di lavoro già al limite per quel gruppo si disattivano
+      $('gruppoScout').addEventListener('change', function () {
+        if (stato.dati && stato.dati.gruppi) aggiornaMenuTurni(stato.dati.gruppi);
       });
     }
     mostra('vista-iscrizione');
