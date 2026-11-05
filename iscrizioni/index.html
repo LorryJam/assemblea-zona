@@ -80,15 +80,25 @@
     .sottotitolo { text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px; color: var(--viola-medio); margin: 0 0 16px; }
 
     /* ---------- Schede gruppi ---------- */
-    .griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+    /* align-items: start → aprendo la descrizione si allunga solo quella scheda */
+    .griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; align-items: start; }
     .scheda {
       background: #fff; border: 1px solid var(--bordo); border-top: 4px solid var(--viola);
-      border-radius: var(--raggio); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+      border-radius: var(--raggio); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
     }
-    .scheda h3 { font-size: 17px; color: var(--viola); line-height: 1.3; }
-    .scheda p { margin: 0; font-size: 14px; color: var(--testo-2); flex: 1; }
-    .scheda a.esterno { font-size: 14px; font-weight: 500; text-decoration: none; }
+    /* nome sempre su 2 righe (anche se corto), così tutte le schede chiuse hanno la stessa altezza */
+    .scheda h3 { font-size: 17px; color: var(--viola); line-height: 1.3; height: 2.6em; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .scheda.aperta h3 { height: auto; min-height: 2.6em; display: block; -webkit-line-clamp: unset; }
+    .scheda .posti { margin-top: 0; }
+    .scheda .riga-azioni { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 22px; }
+    .scheda button.mostra { background: none; border: 0; padding: 0; min-height: 0; width: auto; color: var(--viola);
+      font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; border-radius: 4px; }
+    .scheda button.mostra:hover { background: none; text-decoration: underline; }
+    .scheda a.esterno { font-size: 14px; font-weight: 500; text-decoration: none; margin-left: auto; white-space: nowrap; }
     .scheda a.esterno:hover { text-decoration: underline; }
+    .scheda .descr { margin: 0; font-size: 14px; color: var(--testo-2); white-space: pre-line;
+      border-top: 1px solid var(--bordo); padding-top: 10px; }
     .posti { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
     .pill {
       font-size: 12.5px; padding: 3px 10px; border-radius: 999px; font-weight: 500;
@@ -249,16 +259,16 @@
         <button type="button" class="secondario" id="btn-vai-modulo">Vai all'iscrizione ↓</button>
       </div>
 
-      <section class="sezione" aria-labelledby="h-gruppi">
-        <div class="titolo-sezione"><h2 id="h-gruppi">I gruppi di lavoro</h2></div>
-        <p class="sottotitolo">Posti ancora disponibili per ciascun turno</p>
-        <div class="griglia" id="griglia-gruppi"></div>
-      </section>
-
       <section class="sezione nascosto" id="sez-mappa" aria-labelledby="h-mappa">
         <div class="titolo-sezione"><h2 id="h-mappa">Dove sono le associazioni</h2></div>
         <p class="sottotitolo">Tocca un punto per i dettagli e per sceglierlo</p>
         <div class="mappa" id="mappa" role="region" aria-label="Mappa delle associazioni"></div>
+      </section>
+
+      <section class="sezione" aria-labelledby="h-gruppi">
+        <div class="titolo-sezione"><h2 id="h-gruppi">I gruppi di lavoro</h2></div>
+        <p class="sottotitolo">Posti ancora disponibili per ciascun turno</p>
+        <div class="griglia" id="griglia-gruppi"></div>
       </section>
 
       <section class="sezione" aria-labelledby="h-modulo">
@@ -471,26 +481,78 @@
   }
 
   // ---------- gruppi ----------
+  // Schede compatte, tutte della stessa altezza: nome (2 righe), posti, "Descrizione ▾" e "Sito web ↗".
+  // La descrizione si apre nella scheda; le schede aperte restano aperte quando i posti si aggiornano.
+  var schedeAperte = {};
   function disegnaSchede(gruppi, imp) {
     var griglia = $('griglia-gruppi');
     griglia.innerHTML = '';
     gruppi.forEach(function (g) {
       var s = el('article', 'scheda');
-      s.appendChild(el('h3', null, g.nome));
-      if (g.descrizione) s.appendChild(el('p', null, g.descrizione));
-      else s.appendChild(el('p'));
-      if (g.link) {
-        var a = el('a', 'esterno', 'Scopri l\'associazione ↗');
-        a.href = g.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
-        s.appendChild(a);
-      }
+      s.setAttribute('data-id', g.id);
+      var h = el('h3', null, g.nome);
+      h.title = g.nome;
+      s.appendChild(h);
       var p = el('div', 'posti');
       [[imp.nomeTurno1, g.postiT1], [imp.nomeTurno2, g.postiT2]].forEach(function (t) {
         var cls = 'pill' + (t[1] <= 0 ? ' pieno' : (t[1] <= 3 ? ' pochi' : ''));
         p.appendChild(el('span', cls, t[0] + ': ' + testoPosti(t[1])));
       });
       s.appendChild(p);
+
+      var riga = el('div', 'riga-azioni');
+      var descr = null, btn = null;
+      // con la descrizione il pulsante c'è sempre; senza, compare solo se il nome è tagliato (vedi controllaNomiTagliati)
+      btn = el('button', 'mostra');
+      btn.type = 'button';
+      if (g.descrizione) {
+        descr = el('p', 'descr', g.descrizione);
+        descr.id = 'descr-' + g.id.replace(/[^A-Za-z0-9_-]/g, '_');
+        btn.setAttribute('aria-controls', descr.id);
+      } else {
+        s.setAttribute('data-solo-nome', '1');
+      }
+      riga.appendChild(btn);
+      if (g.link) {
+        var a = el('a', 'esterno', 'Sito web ↗');
+        a.href = g.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        a.setAttribute('aria-label', 'Sito web di ' + g.nome + ' (si apre in una nuova scheda)');
+        riga.appendChild(a);
+      }
+      s.appendChild(riga);
+      if (btn) {
+        btn.classList.add('nascosto');
+        if (descr) { s.appendChild(descr); btn.classList.remove('nascosto'); }
+        var etichetta = descr ? 'Descrizione ▾' : 'Nome completo ▾';
+        var imposta = function (aperta) {
+          s.classList.toggle('aperta', aperta);
+          if (descr) descr.classList.toggle('nascosto', !aperta);
+          btn.textContent = aperta ? 'Chiudi ▴' : etichetta;
+          btn.setAttribute('aria-expanded', aperta ? 'true' : 'false');
+          if (aperta) schedeAperte[g.id] = true; else delete schedeAperte[g.id];
+        };
+        imposta(!!schedeAperte[g.id]);
+        btn.addEventListener('click', function () { imposta(!s.classList.contains('aperta')); controllaNomiTagliati(); });
+      }
       griglia.appendChild(s);
+    });
+    controllaNomiTagliati();
+    if (!osservaGriglia && window.ResizeObserver) {
+      // la griglia viene disegnata anche quando è ancora nascosta e cambia larghezza con la finestra
+      osservaGriglia = new ResizeObserver(controllaNomiTagliati);
+      osservaGriglia.observe(griglia);
+    }
+  }
+  var osservaGriglia = null;
+
+  // Nelle schede senza descrizione mostra "Nome completo ▾" solo se il nome non sta in 2 righe
+  function controllaNomiTagliati() {
+    document.querySelectorAll('#griglia-gruppi .scheda[data-solo-nome]').forEach(function (s) {
+      var btn = s.querySelector('button.mostra');
+      if (s.classList.contains('aperta')) { btn.classList.remove('nascosto'); return; }
+      var h = s.querySelector('h3');
+      if (!h.clientHeight) return; // griglia non ancora visibile: si ricontrolla quando compare
+      btn.classList.toggle('nascosto', h.scrollHeight <= h.clientHeight + 1);
     });
   }
 
