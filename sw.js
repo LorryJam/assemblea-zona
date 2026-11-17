@@ -1,6 +1,6 @@
 // Service worker della mini-app: tiene in memoria solo il "guscio" (icone, emblema, pagina d'avvio)
 // così l'app si apre subito. I dati dell'assemblea arrivano sempre da Google, mai dalla cache.
-var CACHE = 'assemblea-v2';
+var CACHE = 'assemblea-v3';   // v3: pagina d'avvio con la safe area (notch), 1.7
 var NETWORK_TIMEOUT_MS = 4000;   // rete lenta o "finta" (Wi-Fi senza internet): dopo 4 s uso la copia salvata
 var SHELL = ['./', 'index.html', 'manifest.webmanifest', 'emblema-bianco.svg',
   'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-32.png'];

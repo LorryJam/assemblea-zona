@@ -16,8 +16,12 @@
 <style>
   html, body { margin: 0; height: 100%; background: #462678; overflow: hidden; }
   body { font: 16px/1.4 Roboto, Tahoma, "Segoe UI", system-ui, sans-serif; color: #fff; }
-  /* La pagina operatori occupa tutto lo schermo */
-  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #ECE9E6; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s; z-index: 1; }
+  /* La pagina operatori occupa lo schermo ma NON la zona di orologio, notch e angoli arrotondati
+     (safe area): lì i tocchi arrivano male. Quella striscia resta viola, come lo sfondo. */
+  #app { position: fixed; top: env(safe-area-inset-top, 0px); right: env(safe-area-inset-right, 0px);
+    bottom: env(safe-area-inset-bottom, 0px); left: env(safe-area-inset-left, 0px);
+    width: calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); border: 0; background: #ECE9E6; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s; z-index: 1; }
   #app.ready { opacity: 1; visibility: visible; pointer-events: auto; }
   /* Schermata d'avvio con l'emblema, finché la pagina non è pronta */
   #splash { position: fixed; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
